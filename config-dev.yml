@@ -1,0 +1,46 @@
+app:
+  name: aether
+  server: Development
+webserver:
+  port: 9000
+  timeout: 10 # in second
+  rate_limit: 10
+database:
+  tipe: core
+  driver: mysql
+  address: 117.53.44.216
+  username: thebest
+  password: thebest!@#$
+  port: 3306
+  name: dev_aether
+  maxidle: 10
+  maxopen: 10
+  maxidletime: 5
+  maxlifetime: 10
+  timeout: 5 # in second
+jwt:
+  verifykey: hebat  
+  key: secret   
+  tokenexpiredtime: 900 # in minute
+  refreshtokenexpiredtime: 365 # in days
+timezone:
+  timezone: Asia/Makassar # Asia/Jakarta, Asia/Makassar, Asia/Jayapura
+log:
+  level: trace # trace, debug, info, warn, error, fatal, panic
+  levels:
+    - info
+    - warn
+    - error
+payment:
+  ipaymukey: SANDBOXBA640645-B4FF-488B-A540-7F866791E73E-20220425110704
+  ipaymuva: "0000007762212544"
+  ipaymuurl: https://sandbox.ipaymu.com/api/v2/payment/direct
+  ipaymucallbackurl: http://117.53.44.216:9000/api/v1/order/update
+  ipaymutranscationurl: https://sandbox.ipaymu.com/api/v2/transaction
+email:
+  fromemail: temanbunda.official@gmail.com
+  fromemailpassword: Temanbunda1!
+  linkverifyemail: http://117.53.44.216:9000/user/email/verify?access_token=
+telegram:
+  chatid: -1001778832022
+  bottoken: 5324366788:AAHcZtf1nebKAIaGMYz6Fe2IFSwj5aaXoMM 
