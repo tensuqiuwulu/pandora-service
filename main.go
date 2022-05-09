@@ -28,7 +28,7 @@ func main() {
 	// Logger
 	logrusLogger := utilities.NewLogger(appConfig.Log)
 
-	scheduler := cron.New(cron.WithLocation(location))
+	scheduler := cron.New(cron.WithLocation(location), cron.WithLogger(cron.DefaultLogger))
 
 	// stop scheduler tepat sebelum fungsi berakhir
 	defer scheduler.Stop()

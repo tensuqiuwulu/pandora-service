@@ -16,7 +16,6 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/tensuqiuwulu/pandora-service/config"
 	"github.com/tensuqiuwulu/pandora-service/entity"
-	"github.com/tensuqiuwulu/pandora-service/exceptions"
 	"github.com/tensuqiuwulu/pandora-service/repository/mysql"
 	"gorm.io/gorm"
 )
@@ -56,7 +55,7 @@ func (service *OrderServiceImplementation) ProsesCompletedOrder() error {
 		waktuSekarang := time.Now()
 		waktu := order.CompleteDueDate.Time
 		fmt.Println("waktu sekarang = ", waktuSekarang)
-		fmt.Println("batas waktu penyelesauan = ", waktu)
+		fmt.Println("batas waktu penyelesaian = ", waktu)
 		if waktuSekarang.After(waktu) {
 			fmt.Println("token = ", service.ConfigPayment.SecretToken)
 			url, _ := url.Parse(service.ConfigPayment.ApiCompleted + order.Id)
@@ -74,7 +73,6 @@ func (service *OrderServiceImplementation) ProsesCompletedOrder() error {
 
 			if err != nil {
 				log.Fatalf("An Error Occured %v", err)
-				exceptions.PanicIfError(err, "", service.Logger)
 			}
 			defer resp.Body.Close()
 
@@ -129,7 +127,6 @@ func (service *OrderServiceImplementation) ProsesPembayaranViaVa() error {
 
 		if err != nil {
 			log.Fatalf("An Error Occured %v", err)
-			exceptions.PanicIfError(err, "", service.Logger)
 		}
 		defer resp.Body.Close()
 
@@ -137,7 +134,6 @@ func (service *OrderServiceImplementation) ProsesPembayaranViaVa() error {
 
 		if err := json.NewDecoder(resp.Body).Decode(&dataPaymentStatus); err != nil {
 			fmt.Println(err)
-			exceptions.PanicIfError(err, "", service.Logger)
 		}
 
 		if dataPaymentStatus.Data.Status == 1 || dataPaymentStatus.Data.Status == 6 {
@@ -166,7 +162,6 @@ func (service *OrderServiceImplementation) ProsesPembayaranViaVa() error {
 
 			if err != nil {
 				log.Fatalf("An Error Occured %v", err)
-				exceptions.PanicIfError(err, "", service.Logger)
 			}
 			defer resp.Body.Close()
 
@@ -212,7 +207,6 @@ func (service *OrderServiceImplementation) ProsesPembatalanOrder() error {
 
 			if err != nil {
 				log.Fatalf("An Error Occured %v", err)
-				exceptions.PanicIfError(err, "", service.Logger)
 			}
 			defer resp.Body.Close()
 
