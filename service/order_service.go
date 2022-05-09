@@ -54,10 +54,9 @@ func (service *OrderServiceImplementation) ProsesCompletedOrder() error {
 	for _, order := range orders {
 		waktuSekarang := time.Now()
 		waktu := order.CompleteDueDate.Time
-		fmt.Println("waktu sekarang = ", waktuSekarang)
-		fmt.Println("batas waktu penyelesaian = ", waktu)
+		// fmt.Println("waktu sekarang = ", waktuSekarang)
+		// fmt.Println("batas waktu penyelesaian = ", waktu)
 		if waktuSekarang.After(waktu) {
-			fmt.Println("token = ", service.ConfigPayment.SecretToken)
 			url, _ := url.Parse(service.ConfigPayment.ApiCompleted + order.Id)
 
 			req := &http.Request{
@@ -90,7 +89,7 @@ func (service *OrderServiceImplementation) ProsesCompletedOrder() error {
 func (service *OrderServiceImplementation) ProsesPembayaranViaVa() error {
 	orders, err := service.OrderRepositoryInterface.FindOrderByOrderStatus(service.DB, "Menunggu Pembayaran")
 
-	fmt.Println("Pembayaran Url = ", service.ConfigPayment.ApiCompleted)
+	// fmt.Println("Pembayaran Url = ", service.ConfigPayment.ApiCompleted)
 
 	for _, order := range orders {
 		// cek status pembayaran ke ipaymu
@@ -138,7 +137,7 @@ func (service *OrderServiceImplementation) ProsesPembayaranViaVa() error {
 
 		if dataPaymentStatus.Data.Status == 1 || dataPaymentStatus.Data.Status == 6 {
 			url, _ := url.Parse(service.ConfigPayment.ApiPembayaran)
-			fmt.Println("Proses Pembayaran Url = ", url)
+			// fmt.Println("Proses Pembayaran Url = ", url)
 			postBody, _ := json.Marshal(map[string]interface{}{
 				"trx_id":       order.TrxId,
 				"status":       "berhasil",
@@ -182,7 +181,7 @@ func (service *OrderServiceImplementation) ProsesPembayaranViaVa() error {
 func (service *OrderServiceImplementation) ProsesPembatalanOrder() error {
 	orders, err := service.OrderRepositoryInterface.FindOrderByOrderStatus(service.DB, "Menunggu Pembayaran")
 
-	fmt.Println("Pembatalan Url = ", service.ConfigPayment.ApiCancel)
+	// fmt.Println("Pembatalan Url = ", service.ConfigPayment.ApiCancel)
 
 	for _, order := range orders {
 		waktuSekarang := time.Now()
