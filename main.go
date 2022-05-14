@@ -45,9 +45,9 @@ func main() {
 
 	scheduler.AddFunc("*/1 * * * *", func() { orderController.ProsesPembayaranViaVa() })
 
-	scheduler.AddFunc("*/1 * * * *", func() { orderController.ProsesCompletedOrder() })
+	scheduler.AddFunc("*/5 * * * *", func() { orderController.ProsesCompletedOrder() })
 
-	scheduler.AddFunc("*/1 * * * *", func() { orderController.ProsesPembatalanOrder() })
+	scheduler.AddFunc("*/3 * * * *", func() { orderController.ProsesPembatalanOrder() })
 
 	// start scheduler
 	go scheduler.Start()

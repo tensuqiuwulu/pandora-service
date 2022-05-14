@@ -21,9 +21,9 @@ import (
 )
 
 type OrderServiceInterface interface {
-	ProsesPembayaranViaVa() error
-	ProsesCompletedOrder() error
-	ProsesPembatalanOrder() error
+	ProsesPembayaranViaVa()
+	ProsesCompletedOrder()
+	ProsesPembatalanOrder()
 }
 
 type OrderServiceImplementation struct {
@@ -46,104 +46,68 @@ func NewOrderService(
 	}
 }
 
-func (service *OrderServiceImplementation) ProsesCompletedOrder() error {
-	orders, err := service.OrderRepositoryInterface.FindOrderByOrderStatus(service.DB, "Sampai Di Tujuan")
+func (service *OrderServiceImplementation) ProsesCompletedOrder() {
+	orders, _ := service.OrderRepositoryInterface.FindOrderByOrderStatus(service.DB, "Sampai Di Tujuan")
 
-	fmt.Println("Completed Url = ", service.ConfigPayment.ApiCompleted)
+	// fmt.Println("Completed Url = ", service.ConfigPayment.ApiCompleted)
+	if len(orders) > 0 {
+		for _, order := range orders {
+			waktuSekarang := time.Now()
+			waktu := order.CompleteDueDate.Time
+			// fmt.Println("waktu sekarang = ", waktuSekarang)
+			// fmt.Println("batas waktu penyelesaian = ", waktu)
+			if waktuSekarang.After(waktu) {
+				url, _ := url.Parse(service.ConfigPayment.ApiCompleted + order.Id)
 
-	for _, order := range orders {
-		waktuSekarang := time.Now()
-		waktu := order.CompleteDueDate.Time
-		// fmt.Println("waktu sekarang = ", waktuSekarang)
-		// fmt.Println("batas waktu penyelesaian = ", waktu)
-		if waktuSekarang.After(waktu) {
-			url, _ := url.Parse(service.ConfigPayment.ApiCompleted + order.Id)
+				req := &http.Request{
+					Method: "PUT",
+					URL:    url,
+					Header: map[string][]string{
+						"Content-Type":  {"application/json"},
+						"Authorization": {"Bearer " + service.ConfigPayment.SecretToken},
+					},
+				}
 
-			req := &http.Request{
-				Method: "PUT",
-				URL:    url,
-				Header: map[string][]string{
-					"Content-Type":  {"application/json"},
-					"Authorization": {"Bearer " + service.ConfigPayment.SecretToken},
-				},
+				resp, err := http.DefaultClient.Do(req)
+
+				if err != nil {
+					log.Fatalf("An Error Occured %v", err)
+				}
+				defer resp.Body.Close()
+
+				fmt.Println("penyelesaian orderan sukses = ", order.NumberOrder, " Nama = ", order.FullName)
+				ss := fmt.Sprintf("%+v\n", resp)
+				fmt.Println(ss)
+			} else {
+				fmt.Println("penyelesaian orderan belum bisa dilakukan = ", order.NumberOrder, " Nama = ", order.FullName)
 			}
-
-			resp, err := http.DefaultClient.Do(req)
-
-			if err != nil {
-				log.Fatalf("An Error Occured %v", err)
-			}
-			defer resp.Body.Close()
-
-			ss := fmt.Sprintf("%+v\n", resp)
-			fmt.Println(ss)
-
-			fmt.Println("penyelesaian orderan sukses = ", order.NumberOrder, " Nama = ", order.FullName)
-		} else {
-			fmt.Println("penyelesaian orderan belum bisa dilakukan = ", order.NumberOrder, " Nama = ", order.FullName)
 		}
+	} else {
+		fmt.Println("Tidak ada order dalam status sampai di tujuan")
 	}
-	return err
 }
 
-func (service *OrderServiceImplementation) ProsesPembayaranViaVa() error {
-	orders, err := service.OrderRepositoryInterface.FindOrderByOrderStatus(service.DB, "Menunggu Pembayaran")
+func (service *OrderServiceImplementation) ProsesPembayaranViaVa() {
+	orders, _ := service.OrderRepositoryInterface.FindOrderByOrderStatusVa(service.DB, "Menunggu Pembayaran")
 
-	// fmt.Println("Pembayaran Url = ", service.ConfigPayment.ApiCompleted)
+	if len(orders) > 0 {
+		for _, order := range orders {
+			// cek status pembayaran ke ipaymu
+			var ipaymu_va = string(service.ConfigPayment.IpaymuVa)
+			var ipaymu_key = string(service.ConfigPayment.IpaymuKey)
 
-	for _, order := range orders {
-		// cek status pembayaran ke ipaymu
-		var ipaymu_va = string(service.ConfigPayment.IpaymuVa)
-		var ipaymu_key = string(service.ConfigPayment.IpaymuKey)
-
-		url, _ := url.Parse(string(service.ConfigPayment.IpaymuTranscationUrl))
-		postBody, _ := json.Marshal(map[string]interface{}{
-			"transactionId": order.TrxId,
-		})
-
-		bodyHash := sha256.Sum256([]byte(postBody))
-		bodyHashToString := hex.EncodeToString(bodyHash[:])
-		stringToSign := "POST:" + ipaymu_va + ":" + strings.ToLower(string(bodyHashToString)) + ":" + ipaymu_key
-
-		h := hmac.New(sha256.New, []byte(ipaymu_key))
-		h.Write([]byte(stringToSign))
-		signature := hex.EncodeToString(h.Sum(nil))
-
-		reqBody := ioutil.NopCloser(strings.NewReader(string(postBody)))
-
-		req := &http.Request{
-			Method: "POST",
-			URL:    url,
-			Header: map[string][]string{
-				"Content-Type": {"application/json"},
-				"va":           {ipaymu_va},
-				"signature":    {signature},
-			},
-			Body: reqBody,
-		}
-
-		resp, err := http.DefaultClient.Do(req)
-
-		if err != nil {
-			log.Fatalf("An Error Occured %v", err)
-		}
-		defer resp.Body.Close()
-
-		var dataPaymentStatus entity.PaymentStatusResponse
-
-		if err := json.NewDecoder(resp.Body).Decode(&dataPaymentStatus); err != nil {
-			fmt.Println(err)
-		}
-
-		if dataPaymentStatus.Data.Status == 1 || dataPaymentStatus.Data.Status == 6 {
-			url, _ := url.Parse(service.ConfigPayment.ApiPembayaran)
-			// fmt.Println("Proses Pembayaran Url = ", url)
+			url, _ := url.Parse(string(service.ConfigPayment.IpaymuTranscationUrl))
 			postBody, _ := json.Marshal(map[string]interface{}{
-				"trx_id":       order.TrxId,
-				"status":       "berhasil",
-				"status_code":  dataPaymentStatus.Data.Status,
-				"reference_id": order.NumberOrder,
+				"transactionId": order.TrxId,
 			})
+
+			bodyHash := sha256.Sum256([]byte(postBody))
+			bodyHashToString := hex.EncodeToString(bodyHash[:])
+			stringToSign := "POST:" + ipaymu_va + ":" + strings.ToLower(string(bodyHashToString)) + ":" + ipaymu_key
+
+			h := hmac.New(sha256.New, []byte(ipaymu_key))
+			h.Write([]byte(stringToSign))
+			signature := hex.EncodeToString(h.Sum(nil))
 
 			reqBody := ioutil.NopCloser(strings.NewReader(string(postBody)))
 
@@ -152,7 +116,8 @@ func (service *OrderServiceImplementation) ProsesPembayaranViaVa() error {
 				URL:    url,
 				Header: map[string][]string{
 					"Content-Type": {"application/json"},
-					// "Authorization": {"Bearer " + service.ConfigPayment.SecretToken},
+					"va":           {ipaymu_va},
+					"signature":    {signature},
 				},
 				Body: reqBody,
 			}
@@ -164,59 +129,93 @@ func (service *OrderServiceImplementation) ProsesPembayaranViaVa() error {
 			}
 			defer resp.Body.Close()
 
-			ss := fmt.Sprintf("%+v\n", resp)
-			fmt.Println(ss)
+			var dataPaymentStatus entity.PaymentStatusResponse
 
-			fmt.Println("pembayaran sukses = ", order.NumberOrder, " Nama = ", order.FullName)
+			if err := json.NewDecoder(resp.Body).Decode(&dataPaymentStatus); err != nil {
+				fmt.Println(err)
+			}
 
-		} else {
-			fmt.Println("gagal proses belum bayar order number = ", order.NumberOrder, " Nama = ", order.FullName)
+			if dataPaymentStatus.Data.Status == 1 || dataPaymentStatus.Data.Status == 6 {
+				url, _ := url.Parse(service.ConfigPayment.ApiPembayaran)
+				// fmt.Println("Proses Pembayaran Url = ", url)
+				postBody, _ := json.Marshal(map[string]interface{}{
+					"trx_id":       order.TrxId,
+					"status":       "berhasil",
+					"status_code":  dataPaymentStatus.Data.Status,
+					"reference_id": order.NumberOrder,
+				})
+
+				reqBody := ioutil.NopCloser(strings.NewReader(string(postBody)))
+
+				req := &http.Request{
+					Method: "POST",
+					URL:    url,
+					Header: map[string][]string{
+						"Content-Type": {"application/json"},
+						// "Authorization": {"Bearer " + service.ConfigPayment.SecretToken},
+					},
+					Body: reqBody,
+				}
+
+				resp, err := http.DefaultClient.Do(req)
+
+				if err != nil {
+					log.Fatalf("An Error Occured %v", err)
+				}
+				defer resp.Body.Close()
+
+				fmt.Println("pembayaran sukses = ", order.NumberOrder, " Nama = ", order.FullName)
+				ss := fmt.Sprintf("%+v\n", resp)
+				fmt.Println(ss)
+			} else {
+				fmt.Println("gagal proses belum bayar order number = ", order.NumberOrder, " Nama = ", order.FullName)
+			}
 		}
-
+	} else {
+		fmt.Println("Tidak ada order dalam status menunggu pembayaran")
 	}
-
-	return err
 }
 
-func (service *OrderServiceImplementation) ProsesPembatalanOrder() error {
-	orders, err := service.OrderRepositoryInterface.FindOrderByOrderStatus(service.DB, "Menunggu Pembayaran")
+func (service *OrderServiceImplementation) ProsesPembatalanOrder() {
+	orders, _ := service.OrderRepositoryInterface.FindOrderByOrderStatus(service.DB, "Menunggu Pembayaran")
 
 	// fmt.Println("Pembatalan Url = ", service.ConfigPayment.ApiCancel)
 
-	for _, order := range orders {
-		waktuSekarang := time.Now()
-		waktu := order.PaymentDueDate.Time
-		fmt.Println("waktu sekarang = ", waktuSekarang)
-		fmt.Println("batas waktu penyelesauan = ", waktu)
+	if len(orders) > 0 {
+		for _, order := range orders {
+			waktuSekarang := time.Now()
+			waktu := order.PaymentDueDate.Time
+			// fmt.Println("waktu sekarang = ", waktuSekarang)
+			// fmt.Println("batas waktu penyelesauan = ", waktu)
 
-		if waktuSekarang.After(waktu) {
-			fmt.Println("token = ", service.ConfigPayment.SecretToken)
-			url, _ := url.Parse(service.ConfigPayment.ApiCancel + order.Id)
-			fmt.Println("Pembatalan Url = ", url)
-			req := &http.Request{
-				Method: "PUT",
-				URL:    url,
-				Header: map[string][]string{
-					"Content-Type":  {"application/json"},
-					"Authorization": {"Bearer " + service.ConfigPayment.SecretToken},
-				},
+			if waktuSekarang.After(waktu) {
+				// fmt.Println("token = ", service.ConfigPayment.SecretToken)
+				url, _ := url.Parse(service.ConfigPayment.ApiCancel + order.Id)
+				// fmt.Println("Pembatalan Url = ", url)
+				req := &http.Request{
+					Method: "PUT",
+					URL:    url,
+					Header: map[string][]string{
+						"Content-Type":  {"application/json"},
+						"Authorization": {"Bearer " + service.ConfigPayment.SecretToken},
+					},
+				}
+
+				resp, err := http.DefaultClient.Do(req)
+
+				if err != nil {
+					log.Fatalf("An Error Occured %v", err)
+				}
+				defer resp.Body.Close()
+
+				fmt.Println("pembatalan orderan sukses = ", order.NumberOrder, " Nama = ", order.FullName)
+				ss := fmt.Sprintf("%+v\n", resp)
+				fmt.Println(ss)
+			} else {
+				fmt.Println("pembatalan orderan belum bisa dilakukan = ", order.NumberOrder, " Nama = ", order.FullName)
 			}
-
-			resp, err := http.DefaultClient.Do(req)
-
-			if err != nil {
-				log.Fatalf("An Error Occured %v", err)
-			}
-			defer resp.Body.Close()
-
-			ss := fmt.Sprintf("%+v\n", resp)
-			fmt.Println(ss)
-
-			fmt.Println("pembatalan orderan sukses = ", order.NumberOrder, " Nama = ", order.FullName)
-		} else {
-			fmt.Println("pembatalan orderan belum bisa dilakukan = ", order.NumberOrder, " Nama = ", order.FullName)
 		}
+	} else {
+		fmt.Println("Belum ada order yg bisa di batalkan")
 	}
-
-	return err
 }

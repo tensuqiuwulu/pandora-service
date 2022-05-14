@@ -24,16 +24,16 @@ func NewOrderController(orderServiceInterface service.OrderServiceInterface) Ord
 }
 
 func (controller *OrderControllerImplementation) ProsesPembayaranViaVa() {
-	fmt.Println("Proses Pembayaran = ", time.Now())
+	fmt.Println("Start Proses Pembayaran = ", time.Now())
 	controller.OrderServiceInterface.ProsesPembayaranViaVa()
 }
 
 func (controller *OrderControllerImplementation) ProsesCompletedOrder() {
-	fmt.Println("Proses Penyelesaian = ", time.Now())
+	fmt.Println("Start Proses Penyelesaian = ", time.Now())
 	controller.OrderServiceInterface.ProsesCompletedOrder()
 }
 
 func (controller *OrderControllerImplementation) ProsesPembatalanOrder() {
-	fmt.Println("Proses Pembatalan = ", time.Now())
-	controller.OrderServiceInterface.ProsesCompletedOrder()
+	fmt.Println("Start Proses Pembatalan = ", time.Now())
+	controller.OrderServiceInterface.ProsesPembatalanOrder()
 }

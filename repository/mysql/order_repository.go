@@ -7,8 +7,8 @@ import (
 )
 
 type OrderRepositoryInterface interface {
+	FindOrderByOrderStatusVa(DB *gorm.DB, orderStatus string) ([]entity.Order, error)
 	FindOrderByOrderStatus(DB *gorm.DB, orderStatus string) ([]entity.Order, error)
-	UpdateOrderStatus(DB *gorm.DB, numberOrder string, order entity.Order) (entity.Order, error)
 }
 
 type OrderRepositoryImplementation struct {
@@ -21,25 +21,14 @@ func NewOrderRepository(configDatabase *config.Database) OrderRepositoryInterfac
 	}
 }
 
-func (repository *OrderRepositoryImplementation) FindOrderByOrderStatus(DB *gorm.DB, orderStatus string) ([]entity.Order, error) {
+func (repository *OrderRepositoryImplementation) FindOrderByOrderStatusVa(DB *gorm.DB, orderStatus string) ([]entity.Order, error) {
 	var order []entity.Order
-	results := DB.Where("order_status = ?", orderStatus).Where("payment_method = ?", "va").Find(&order)
+	results := DB.Where("order_status = ?", orderStatus).Where("payment_method = ?", "va").Or("payment_method = ?", "qris").Find(&order)
 	return order, results.Error
 }
 
-func (repository *OrderRepositoryImplementation) UpdateOrderStatus(DB *gorm.DB, NumberOrder string, order entity.Order) (entity.Order, error) {
-	// var test entity.Order
-	// fmt.Println("waktu 2", test.PaymentSuccessAt.Time)
-
-	result := DB.
-		Model(entity.Order{}).
-		Where("number_order = ?", NumberOrder).
-		Updates(entity.Order{
-			PaymentStatus:    order.PaymentStatus,
-			OrderSatus:       order.OrderSatus,
-			PaymentSuccessAt: order.PaymentSuccessAt,
-			PaymentMethod:    order.PaymentMethod,
-			PaymentChannel:   order.PaymentChannel,
-		})
-	return order, result.Error
+func (repository *OrderRepositoryImplementation) FindOrderByOrderStatus(DB *gorm.DB, orderStatus string) ([]entity.Order, error) {
+	var order []entity.Order
+	results := DB.Where("order_status = ?", orderStatus).Find(&order)
+	return order, results.Error
 }
