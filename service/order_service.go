@@ -7,7 +7,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"net/url"
 	"strings"
@@ -71,7 +70,7 @@ func (service *OrderServiceImplementation) ProsesCompletedOrder() {
 				resp, err := http.DefaultClient.Do(req)
 
 				if err != nil {
-					log.Fatalf("An Error Occured %v", err)
+					fmt.Println("An Error Occured ", err)
 				}
 				defer resp.Body.Close()
 
@@ -125,7 +124,7 @@ func (service *OrderServiceImplementation) ProsesPembayaranViaVa() {
 			resp, err := http.DefaultClient.Do(req)
 
 			if err != nil {
-				log.Fatalf("An Error Occured %v", err)
+				fmt.Println("An Error Occured ", err)
 			}
 			defer resp.Body.Close()
 
@@ -160,7 +159,7 @@ func (service *OrderServiceImplementation) ProsesPembayaranViaVa() {
 				resp, err := http.DefaultClient.Do(req)
 
 				if err != nil {
-					log.Fatalf("An Error Occured %v", err)
+					fmt.Println("An Error Occured ", err)
 				}
 				defer resp.Body.Close()
 
@@ -204,7 +203,7 @@ func (service *OrderServiceImplementation) ProsesPembatalanOrder() {
 				resp, err := http.DefaultClient.Do(req)
 
 				if err != nil {
-					log.Fatalf("An Error Occured %v", err)
+					fmt.Println("An Error Occured ", err)
 				}
 				defer resp.Body.Close()
 

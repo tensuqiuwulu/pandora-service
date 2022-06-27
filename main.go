@@ -35,19 +35,23 @@ func main() {
 
 	// Repository
 	orderRepository := mysql.NewOrderRepository(&appConfig.Database)
+	userRepository := mysql.NewUserRepository(&appConfig.Database)
 
 	// Service
 	orderService := service.NewOrderService(mysqlDBConnection, logrusLogger, appConfig.Payment, orderRepository)
+	userService := service.NewUserService(mysqlDBConnection, logrusLogger, userRepository)
 
 	// Controler
 	orderController := controller.NewOrderController(orderService)
-	// orderController.FindOrderByOrderStatus("Menunggu Pembayaran")
+	userController := controller.NewUserController(userService)
 
-	scheduler.AddFunc("*/1 * * * *", func() { orderController.ProsesPembayaranViaVa() })
+	scheduler.AddFunc("*/2 * * * *", func() { orderController.ProsesPembayaranViaVa() })
 
 	scheduler.AddFunc("*/5 * * * *", func() { orderController.ProsesCompletedOrder() })
 
 	scheduler.AddFunc("*/3 * * * *", func() { orderController.ProsesPembatalanOrder() })
+
+	scheduler.AddFunc("*/10 * * * *", func() { userController.ProsesUpdateUserNotVerification() })
 
 	// start scheduler
 	go scheduler.Start()

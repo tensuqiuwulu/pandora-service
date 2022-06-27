@@ -23,7 +23,7 @@ func NewOrderRepository(configDatabase *config.Database) OrderRepositoryInterfac
 
 func (repository *OrderRepositoryImplementation) FindOrderByOrderStatusVa(DB *gorm.DB, orderStatus string) ([]entity.Order, error) {
 	var order []entity.Order
-	results := DB.Where("order_status = ?", orderStatus).Where("payment_method = ?", "va").Or("payment_method = ?", "qris").Find(&order)
+	results := DB.Where("order_status = ?", orderStatus).Where("payment_method = ?", "va").Or("payment_method = ?", "qris").Or("payment_method = ?", "cc").Find(&order)
 	return order, results.Error
 }
 
