@@ -45,11 +45,11 @@ func main() {
 	orderController := controller.NewOrderController(orderService)
 	userController := controller.NewUserController(userService)
 
-	scheduler.AddFunc("*/2 * * * *", func() { orderController.ProsesPembayaranViaVa() })
+	// scheduler.AddFunc("*/5 * * * *", func() { orderController.ProsesPembayaranViaVa() })
 
-	scheduler.AddFunc("*/5 * * * *", func() { orderController.ProsesCompletedOrder() })
+	scheduler.AddFunc("*/10 * * * *", func() { orderController.ProsesCompletedOrder() })
 
-	scheduler.AddFunc("*/3 * * * *", func() { orderController.ProsesPembatalanOrder() })
+	scheduler.AddFunc("*/10 * * * *", func() { orderController.ProsesPembatalanOrder() })
 
 	scheduler.AddFunc("*/10 * * * *", func() { userController.ProsesUpdateUserNotVerification() })
 
